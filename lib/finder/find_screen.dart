@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mealcircle/widgets/logo.dart';
-import 'package:mealcircle/screens/donate_food.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class FindScreen extends StatelessWidget {
+  const FindScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,29 +34,24 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _buildImageButton(
-                    label: "Donate Food",
-                    imagePath: "assets/donate_icon.png",
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DonateFoodScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildImageButton(
                     label: "Find Food",
                     imagePath: "assets/find_food.png",
                     onPressed: () => debugPrint("Find Food Clicked"),
                   ),
                   _buildImageButton(
-                    label: "Wallet / Payments",
-                    imagePath: "assets/wallet.png",
-                    onPressed: () => debugPrint("Wallet Clicked"),
-                  ),
-                  _buildImageButton(
                     label: "My Orders",
                     imagePath: "assets/orders.png",
                     onPressed: () => debugPrint("My Orders Clicked"),
+                  ),
+                  _buildImageButton(
+                    label: "Notifications",
+                    imagePath: "assets/notification.png",
+                    onPressed: () => debugPrint("Notifications Clicked"),
+                  ),
+                  _buildImageButton(
+                    label: "Payment",
+                    imagePath: "assets/wallet.png",
+                    onPressed: () => debugPrint("payment Clicked"),
                   ),
                   _buildImageButton(
                     label: "Support",

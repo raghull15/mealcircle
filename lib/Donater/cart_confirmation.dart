@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mealcircle/screens/DonationStatusPage.dart';
+import 'package:mealcircle/Donater/cart_details_page.dart';
+import 'package:mealcircle/widgets/user_profile_page.dart';
 const Color _kPrimaryColor = Color(0xFF2AC962);
 
 class DonationItem {
@@ -100,7 +101,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.playfairDisplay(
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.bold,
                 ),
@@ -122,7 +123,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
               ),
               child: Text(
                 'Confirm Cancel',
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.playfairDisplay(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -152,8 +153,9 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
             width: 150,
             child: Text(
               label,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
             ),
@@ -161,8 +163,8 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
           Expanded(
             child: Text(
               value.isEmpty ? 'N/A' : value,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 14,
                 color: Colors.grey.shade700,
               ),
             ),
@@ -230,7 +232,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                           if (isCancelled)
                             Text(
                               'CANCELLED',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.playfairDisplay(
                                 color: Colors.red.shade600,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
@@ -242,20 +244,20 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                   ],
                 ),
                 const Divider(height: 24),
-                _buildSectionTitle('Your Donation'),
+                _buildSectionTitle('Your Donation Details:'),
                 const SizedBox(height: 8),
                 _buildInfoRow('Food Type:', donation.foodType),
                 _buildInfoRow('Quantity (servings):',
                     '${donation.quantity} servings'),
                 _buildInfoRow('Date/Time Available:', donation.dateTime),
                 const SizedBox(height: 16),
-                _buildSectionTitle('Recipient Details'),
+                _buildSectionTitle('Recipient Details :'),
                 const SizedBox(height: 8),
                 _buildInfoRow('Name:', donation.recipientName),
                 _buildInfoRow('Address:', donation.recipientAddress),
                 _buildInfoRow('Phone.no:', donation.recipientPhone),
                 const SizedBox(height: 16),
-                _buildSectionTitle('Delivery Method'),
+                _buildSectionTitle('Delivery Method :'),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -274,7 +276,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                         donation.deliveryByDonor
                             ? 'The food will be delivered by the donor'
                             : 'The recipient will pickup the food',
-                        style: GoogleFonts.poppins(fontSize: 12),
+                        style: GoogleFonts.playfairDisplay(fontSize: 14),
                       ),
                     ),
                   ],
@@ -284,7 +286,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                   'Do you want to cancel this donation?',
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
@@ -293,14 +295,15 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: isCancelled
-                            ? null
-                            : () {
-                                _showReasonDialog(index);
-                              },
+                        onPressed: () {
+                          if (!isCancelled) {
+                            _showReasonDialog(index);
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade400,
-                          disabledBackgroundColor: Colors.grey.shade300,
+                          backgroundColor: isCancelled 
+                              ? Colors.grey.shade300 
+                              : Colors.red.shade400,
                           minimumSize: const Size(double.infinity, 40),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -310,8 +313,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                         child: Text(
                           'Yes',
                           style: GoogleFonts.poppins(
-                            color:
-                                isCancelled ? Colors.grey.shade600 : Colors.white,
+                            color: isCancelled ? Colors.grey.shade600 : Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -321,18 +323,19 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: isCancelled
-                            ? () {
-                                setState(() {
-                                  _currentDonations[index].isCancelled = false;
-                                  _currentDonations[index].cancellationReason = '';
-                                  _reasonControllers[index]?.clear();
-                                });
-                              }
-                            : null,
+                        onPressed: () {
+                          if (isCancelled) {
+                            setState(() {
+                              _currentDonations[index].isCancelled = false;
+                              _currentDonations[index].cancellationReason = '';
+                              _reasonControllers[index]?.clear();
+                            });
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade400,
-                          disabledBackgroundColor: Colors.grey.shade300,
+                          backgroundColor: isCancelled 
+                              ? Colors.green.shade400 
+                              : Colors.grey.shade300,
                           minimumSize: const Size(double.infinity, 40),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -342,8 +345,7 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                         child: Text(
                           'No',
                           style: GoogleFonts.poppins(
-                            color:
-                                isCancelled ? Colors.white : Colors.grey.shade600,
+                            color: isCancelled ? Colors.white : Colors.grey.shade600,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -354,36 +356,39 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
                 ),
                 if (isCancelled) ...[
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red.shade300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cancellation Reason:',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Cancellation Reason:',
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          donation.cancellationReason,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.red.shade600,
+                          const SizedBox(height: 5),
+                          Text(
+                            donation.cancellationReason,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 12,
+                              color: Colors.red.shade600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                ]
               ],
             ),
           ),
@@ -391,30 +396,32 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
       ),
     );
   }
-  Widget _buildTopBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 20),
-      decoration: BoxDecoration(
-        color: _kPrimaryColor, 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 3, 
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back, color: Colors.white, size: 25),
+
+  PreferredSizeWidget _buildTopBar(BuildContext context) {
+    const double customHeight = 74.0;
+
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(customHeight),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _kPrimaryColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black,
+              blurRadius: 4,
+              offset: Offset(0, .2),
             ),
+          ],
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          toolbarHeight: customHeight,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
+            onPressed: () => Navigator.pop(context),
           ),
-          Text(
+          title: Text(
             'Donation Confirmation',
             style: GoogleFonts.imFellGreatPrimerSc(
               fontSize: 24,
@@ -422,45 +429,49 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
               color: Colors.white,
             ),
           ),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Icon(Icons.person_outline, color: Colors.white, size: 25),
-          ),
-        ],
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.person_outline,
+                  color: Colors.white, size: 26),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const UserProfilePage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildProceedButton(BuildContext context) {
-    final confirmedCount =
-        _currentDonations.where((item) => !item.isCancelled).length;
-
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: confirmedCount > 0
-            ? () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DonationStatusPage(
-                      donations: _currentDonations,
-                    ),
-                  ),
-                );
-              }
-            : null,
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CartDetailsPage(
+                donations: _currentDonations,
+              ),
+            ),
+          );
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange,
-          disabledBackgroundColor: Colors.grey.shade300,
           minimumSize: const Size(double.infinity, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         child: Text(
-          confirmedCount > 0
-              ? 'Proceed to Confirmation'
-              : 'Cancel All Donations First',
-          style: GoogleFonts.poppins(
+          'Proceed to Donation',
+          style: GoogleFonts.playfairDisplay(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -478,118 +489,103 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
         _currentDonations.where((item) => item.isCancelled).length;
 
     return Scaffold(
-      backgroundColor: _kPrimaryColor, 
-      body: SafeArea(
+      backgroundColor: const Color(0xFFEDE8E5),
+      appBar: _buildTopBar(context),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTopBar(context),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Container(
-                  margin: const EdgeInsets.all(14),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(
-                              children: [
-                                Text(
-                                  '${_currentDonations.length}',
-                                  style: GoogleFonts.playfairDisplay(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                                Text(
-                                  'Total',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  '$confirmedDonations',
-                                  style: GoogleFonts.playfairDisplay(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green.shade700,
-                                  ),
-                                ),
-                                Text(
-                                  'Confirmed',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.green.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  '$cancelledDonations',
-                                  style: GoogleFonts.playfairDisplay(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red.shade700,
-                                  ),
-                                ),
-                                Text(
-                                  'Cancelled',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.red.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      Text(
+                        '${_currentDonations.length}',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      if (_currentDonations.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 40, bottom: 40),
-                          child: Center(
-                            child: Text(
-                              'No donations to process.',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ),
+                      Text(
+                        'Total',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.blue.shade600,
                         ),
-                      ..._currentDonations.asMap().entries.map((entry) {
-                        return _buildSingleDonationCard(entry.value, entry.key);
-                      }).toList(),
-                      const SizedBox(height: 24),
-                      if (_currentDonations.isNotEmpty)
-                        _buildProceedButton(context),
+                      ),
                     ],
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '$confirmedDonations',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                      Text(
+                        'Confirmed',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.green.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '$cancelledDonations',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                      Text(
+                        'Cancelled',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.red.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (_currentDonations.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 40, bottom: 40),
+                child: Center(
+                  child: Text(
+                    'No donations to process.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ..._currentDonations.asMap().entries.map((entry) {
+              return _buildSingleDonationCard(entry.value, entry.key);
+            }).toList(),
+            const SizedBox(height: 24),
+            if (_currentDonations.isNotEmpty)
+              _buildProceedButton(context),
           ],
         ),
       ),

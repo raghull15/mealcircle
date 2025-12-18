@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import "package:mealcircle/widgets/user_profile_page.dart";
+import 'package:mealcircle/widgets/user_service.dart';
 import 'cart_confirmation.dart';
+import 'person_details_screen.dart';
+import 'group_details_screen.dart';
 
 const Color _kPrimaryColor = Color(0xFF2AC962);
 const Color _kAccentColor = Colors.orange;
@@ -33,61 +38,61 @@ class DonationData {
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
 
-  const CartScreen({super.key, required  this.cartItems});
+  const CartScreen({super.key, required this.cartItems});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-
-  final Map<String, Map<String, String>> _shelterDetails = {
-    "Orphanage": {
-      "name": "Raghul",
-      "address": "No:11/34 Chinna Thambi Street, Kosapet, Chennai-600012",
-      "phone": "1234567890",
-    },
-    "Old Age Home": {
-      "name": "Raghul",
-      "address": "No:11/34 Chinna Thambi Street, Kosapet, Chennai-600012",
-      "phone": "1234567890",
-    },
-    "Animal Shelter": {
-      "name": "Raghul",
-      "address": "No:11/34 Chinna Thambi Street, Kosapet, Chennai-600012",
-      "phone": "1234567890",
-    },
-    "Community Shelter": {
-      "name": "Raghul",
-      "address": "No:11/34 Chinna Thambi Street, Kosapet, Chennai-600012",
-      "phone": "1234567890",
-    },
-    "Child Home": {
-      "name": "Raghul",
-      "address": "No:11/34 Chinna Thambi Street, Kosapet, Chennai-600012",
-      "phone": "1234567890",
-    },
-  };
-
-  final String _donorName = "Dhanush";
-  final String _donorAddress = "No:111/45, Vadamalai Street, Purasaiwalkam, Chennai-600018";
-  final String _donorPhone = "0987654321";
-
+  final _userService = UserService();
+  late String _donorName;
+  late String _donorAddress;
+  late String _donorPhone;
   late List<DonationData> _donations;
- 
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
+    _initializeDonations();
+  }
+
+  void _loadUserData() {
+    final user = _userService.currentUser;
+    if (user != null) {
+      _donorName = user.name ?? "User";
+      _donorAddress = user.fullAddress.isNotEmpty
+          ? user.fullAddress
+          : "${user.addressLine1 ?? ''}, ${user.city ?? ''}, ${user.state ?? ''} ${user.pincode ?? ''}"
+                .trim();
+      _donorPhone = user.phone ?? "Not provided";
+    } else {
+      _donorName = "User";
+      _donorAddress = "Address not set";
+      _donorPhone = "Not provided";
+    }
+  }
+
+  void _initializeDonations() {
     _donations = widget.cartItems.map((item) {
-      final details = _shelterDetails[item["name"]];
+      final shelterPhone = item["phone"]?.toString() ?? "1234567890";
+      final shelterContactName = item["contactName"] ?? "Coordinator";
+      final fullShelterAddress =
+          item["fullAddress"] ?? item["location"] ?? "Unknown Location";
+
       return DonationData(
         shelterItem: item,
         foodTypeController: TextEditingController(),
         quantity: 5,
         timeController: TextEditingController(),
-        recipientNameController: TextEditingController(text: details?["name"] ?? ""),
-        recipientAddressController: TextEditingController(text: details?["address"] ?? ""),
-        recipientPhoneController: TextEditingController(text: details?["phone"] ?? ""),
+        recipientNameController: TextEditingController(
+          text: shelterContactName,
+        ),
+        recipientAddressController: TextEditingController(
+          text: fullShelterAddress,
+        ),
+        recipientPhoneController: TextEditingController(text: shelterPhone),
         deliveryByDonor: true,
       );
     }).toList();
@@ -104,10 +109,25 @@ class _CartScreenState extends State<CartScreen> {
     }
     super.dispose();
   }
-  
+
+  Future<void> _callNumber(String phoneNumber) async {
+    final uri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open dialer')));
+    }
+  }
+
   void _updateQuantity(int index, int change) {
     setState(() {
-      _donations[index].quantity = (_donations[index].quantity + change).clamp(1, 100);
+      _donations[index].quantity = (_donations[index].quantity + change).clamp(
+        1,
+        100,
+      );
     });
   }
 
@@ -120,19 +140,25 @@ class _CartScreenState extends State<CartScreen> {
 
   void _populateDeliveryDetails(int index) {
     final donation = _donations[index];
-    final details = _shelterDetails[donation.shelterItem["name"]];
-    
-    if (donation.deliveryByDonor) {     
-      donation.recipientNameController.text = details?["name"] ?? "";
-      donation.recipientAddressController.text = details?["address"] ?? "";
-      donation.recipientPhoneController.text = details?["phone"] ?? "";
+    final shelterItem = donation.shelterItem;
+    final fullShelterAddress =
+        shelterItem["fullAddress"] ??
+        shelterItem["location"] ??
+        "Unknown Location";
+
+    if (donation.deliveryByDonor) {
+      donation.recipientNameController.text =
+          shelterItem["contactName"] ?? "Coordinator";
+      donation.recipientAddressController.text = fullShelterAddress;
+      donation.recipientPhoneController.text =
+          shelterItem["phone"]?.toString() ?? "1234567890";
     } else {
       donation.recipientNameController.text = _donorName;
       donation.recipientAddressController.text = _donorAddress;
       donation.recipientPhoneController.text = _donorPhone;
     }
   }
-  
+
   Future<void> _selectDateTime(BuildContext context, int index) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -181,10 +207,9 @@ class _CartScreenState extends State<CartScreen> {
           pickedTime.hour,
           pickedTime.minute,
         );
-        
-        String dateString = DateFormat('MMM d, yyyy').format(finalDateTime) + 
-                            " at " + 
-                            DateFormat('h:mm a').format(finalDateTime);
+
+        String dateString =
+            "${DateFormat('MMM d, yyyy').format(finalDateTime)} at ${DateFormat('h:mm a').format(finalDateTime)}";
 
         setState(() {
           _donations[index].timeController.text = dateString;
@@ -204,7 +229,6 @@ class _CartScreenState extends State<CartScreen> {
           donation.recipientNameController.text.isEmpty ||
           donation.recipientAddressController.text.isEmpty ||
           donation.recipientPhoneController.text.isEmpty) {
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -217,68 +241,79 @@ class _CartScreenState extends State<CartScreen> {
         return;
       }
 
-      donationsToSend.add(DonationItem(
-        shelterItem: donation.shelterItem,
-        foodType: donation.foodTypeController.text,
-        quantity: donation.quantity,
-        dateTime: donation.timeController.text, 
-        recipientName: donation.recipientNameController.text,
-        recipientAddress: donation.recipientAddressController.text,
-        recipientPhone: donation.recipientPhoneController.text,
-        deliveryByDonor: donation.deliveryByDonor,
-      ));
+      donationsToSend.add(
+        DonationItem(
+          shelterItem: donation.shelterItem,
+          foodType: donation.foodTypeController.text,
+          quantity: donation.quantity,
+          dateTime: donation.timeController.text,
+          recipientName: donation.recipientNameController.text,
+          recipientAddress: donation.recipientAddressController.text,
+          recipientPhone: donation.recipientPhoneController.text,
+          deliveryByDonor: donation.deliveryByDonor,
+        ),
+      );
     }
 
     if (donationsToSend.isNotEmpty) {
-
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DonationConfirmationPage(
-            confirmedDonations: donationsToSend,
-          ),
+          builder: (context) =>
+              DonationConfirmationPage(confirmedDonations: donationsToSend),
         ),
       );
     }
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 20),
-      decoration: BoxDecoration(
-        color: _kPrimaryColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black,
-            offset: const Offset(0, 3),
-            blurRadius: 9,
+  PreferredSizeWidget _buildTopBar(BuildContext context) {
+    const double customHeight = 74.0;
+
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(customHeight),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _kPrimaryColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black,
+              blurRadius: 4,
+              offset: Offset(0, .2),
+            ),
+          ],
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          toolbarHeight: customHeight,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 25),
-              ),
+          title: Text(
+            "Your Cart",
+            style: GoogleFonts.imFellGreatPrimerSc(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
-            Text(
-              "Your Cart",
-              style: GoogleFonts.imFellGreatPrimerSc(
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(
+                Icons.person_outline,
                 color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                size: 26,
               ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserProfilePage()),
+                );
+              },
             ),
-            const Align(
-              alignment: Alignment.centerRight,
-              child: Icon(Icons.person_outline, color: Colors.white, size: 25),
-            ),
+            const SizedBox(width: 8),
           ],
         ),
       ),
@@ -305,8 +340,8 @@ class _CartScreenState extends State<CartScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 3,
-            offset: const Offset(0, 4),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
           ),
         ],
       ),
@@ -315,6 +350,9 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildShelterCard(Map<String, dynamic> item, int index) {
+    final String phone = item["phone"]?.toString() ?? "1234567890";
+    final String shortLocation = item["location"] ?? "N/A";
+
     return _buildCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,6 +364,8 @@ class _CartScreenState extends State<CartScreen> {
               height: 75,
               width: 90,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  Container(color: Colors.grey[300], height: 75, width: 90),
             ),
           ),
           const SizedBox(width: 12),
@@ -336,7 +376,10 @@ class _CartScreenState extends State<CartScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _kPrimaryColor,
                         borderRadius: BorderRadius.circular(12),
@@ -364,17 +407,84 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  item["distance"] ?? "N/A",
+                  shortLocation,
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 4),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.person, size: 16, color: Colors.orange),
-                    SizedBox(width: 6),
-                    Icon(Icons.group, size: 16, color: Colors.red),
-                    SizedBox(width: 6),
-                    Icon(Icons.phone, size: 16, color: Colors.blue),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PersonDetailScreen(
+                              name: item["contactName"] ?? "Coordinator",
+                              age: item["contactAge"] ?? 40,
+                              service: "Shelter Manager",
+                              details:
+                                  "Coordinates with donors and manages shelter needs.",
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          size: 16,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => GroupDetailScreen(
+                              shelterName: item["name"] ?? "Shelter",
+                              totalPeople: item["totalPeople"] ?? 100,
+                              details:
+                                  "Shows approximate number of people in this shelter and basic info.",
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.group,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => _callNumber(phone),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.phone,
+                          size: 16,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -414,12 +524,12 @@ class _CartScreenState extends State<CartScreen> {
           _buildInputLabel("Date/Time Available:"),
           GestureDetector(
             onTap: () => _selectDateTime(context, index),
-            child: AbsorbPointer( 
+            child: AbsorbPointer(
               child: _buildTextField(
                 hintText: "Select Date and Time",
                 controller: donation.timeController,
                 keyboardType: TextInputType.none,
-                readOnly: true, 
+                readOnly: true,
               ),
             ),
           ),
@@ -438,20 +548,28 @@ class _CartScreenState extends State<CartScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInputLabel(isDeliveryByDonor ? "Recipient's Name:" : "Donor's Name:"),
+              _buildInputLabel(
+                isDeliveryByDonor ? "Recipient's Name:" : "Donor's Name:",
+              ),
               _buildTextField(
                 hintText: "Enter name",
                 controller: donation.recipientNameController,
               ),
               const SizedBox(height: 15),
-              _buildInputLabel(isDeliveryByDonor ? "Recipient's Address:" : "Donor's Address:"),
+              _buildInputLabel(
+                isDeliveryByDonor ? "Recipient's Address:" : "Donor's Address:",
+              ),
               _buildTextField(
                 hintText: "Enter address",
                 controller: donation.recipientAddressController,
                 maxLines: 2,
               ),
               const SizedBox(height: 15),
-              _buildInputLabel(isDeliveryByDonor ? "Recipient's Phone No.:" : "Donor's Phone No.:"),
+              _buildInputLabel(
+                isDeliveryByDonor
+                    ? "Recipient's Phone No.:"
+                    : "Donor's Phone No.:",
+              ),
               _buildTextField(
                 hintText: "Enter phone number",
                 keyboardType: TextInputType.phone,
@@ -504,7 +622,11 @@ class _CartScreenState extends State<CartScreen> {
                         width: double.infinity,
                         height: double.infinity,
                         errorBuilder: (context, error, stack) => Center(
-                          child: Icon(Icons.map, size: 40, color: Colors.grey.shade400),
+                          child: Icon(
+                            Icons.map,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
                       ),
                       Center(
@@ -533,7 +655,7 @@ class _CartScreenState extends State<CartScreen> {
         const SizedBox(width: 15),
         Text(
           "${donation.quantity}",
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.playfairDisplay(
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -549,9 +671,9 @@ class _CartScreenState extends State<CartScreen> {
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         text,
-        style: GoogleFonts.poppins(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+        style: GoogleFonts.playfairDisplay(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
           color: Colors.black87,
         ),
       ),
@@ -563,18 +685,24 @@ class _CartScreenState extends State<CartScreen> {
     TextInputType keyboardType = TextInputType.text,
     TextEditingController? controller,
     int maxLines = 1,
-    bool readOnly = false, 
+    bool readOnly = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      readOnly: readOnly, 
-      style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+      readOnly: readOnly,
+      style: GoogleFonts.playfairDisplay(fontSize: 14, color: Colors.black87),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade400),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        hintStyle: GoogleFonts.playfairDisplay(
+          fontSize: 14,
+          color: Colors.grey.shade400,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 10,
+        ),
         fillColor: Colors.grey.shade50,
         filled: true,
         border: OutlineInputBorder(
@@ -622,10 +750,10 @@ class _CartScreenState extends State<CartScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.poppins(
-             fontSize: 13,
-             fontWeight: FontWeight.w500,
-             color: Colors.black87,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
             ),
           ),
         ),
@@ -661,9 +789,9 @@ class _CartScreenState extends State<CartScreen> {
                 icon: const Icon(Icons.favorite_border, color: Colors.white),
                 label: Text(
                   "Donate Now",
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.playfairDisplay(
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
@@ -681,12 +809,15 @@ class _CartScreenState extends State<CartScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.chat_bubble_outline, color: _kPrimaryColor),
+                icon: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: _kPrimaryColor,
+                ),
                 label: Text(
                   "Message",
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.playfairDisplay(
                     color: _kPrimaryColor,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
@@ -704,13 +835,15 @@ class _CartScreenState extends State<CartScreen> {
       ),
     );
   }
-  
+
   List<Widget> _buildDonationSections() {
     List<Widget> sections = [];
     for (int i = 0; i < _donations.length; i++) {
       sections.add(_buildDonationSection(i));
       if (i < _donations.length - 1) {
-        sections.add(const Divider(height: 40, thickness: 2, color: Colors.black26));
+        sections.add(
+          const Divider(height: 40, thickness: 2, color: Colors.black26),
+        );
       }
     }
     return sections;
@@ -735,41 +868,20 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(42, 201, 98, 1),
-      body: Column(
-        children: [
-          _buildTopBar(context),
-          const SizedBox(height: 1),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Color (0xFFEDE8E5),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(1),
-                  topRight: Radius.circular(1),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black,
-                    blurRadius: 2,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(_kPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionTitle("Selected Shelters (${widget.cartItems.length})"),
-                    const SizedBox(height: 20),
-                    ..._buildDonationSections(),
-                  ],
-                ),
-              ),
+      backgroundColor: const Color(0xFFEDE8E5),
+      appBar: _buildTopBar(context),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(_kPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle(
+              "Selected Shelters (${widget.cartItems.length})",
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            ..._buildDonationSections(),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomDonateBar(context),
     );

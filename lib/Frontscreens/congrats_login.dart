@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'subscription_page.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'user_type_selection_screen.dart';
 
 class CongratsLogin extends StatefulWidget {
   const CongratsLogin({super.key});
@@ -46,19 +47,19 @@ class _CongratsLoginState extends State<CongratsLogin> {
                     color: Colors.white,
                   ),
                   const SizedBox(height: 25),
-                  const Text(
+                  Text(
                     "Login Successful!",
-                    style: TextStyle(
+                    style: GoogleFonts.playfairDisplay(
                       fontSize: 34,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     "Welcome back to Meal Circle!",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 18,
                       color: Colors.white,
                     ),
@@ -68,8 +69,7 @@ class _CongratsLoginState extends State<CongratsLogin> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -77,13 +77,12 @@ class _CongratsLoginState extends State<CongratsLogin> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => const SubscriptionScreen()),
+                        MaterialPageRoute(builder: (context) => const UserTypeSelectionFlow()),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       "Continue",
-                      style: TextStyle(fontSize: 18),
+                      style: GoogleFonts.playfairDisplay(fontSize: 20,fontWeight: FontWeight.bold),
                     ),
                   )
                 ],
