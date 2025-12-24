@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "109048637104",
+    "project_id": "mealcircle-b3fe7",
+    "storage_bucket": "mealcircle-b3fe7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109048637104:android:e4b416991ae954cd5e3d75",
+        "android_client_info": {
+          "package_name": "com.example.mealcircle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109048637104-673dkd5e930vmfclm06q8g88ok65omhi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mealcircle",
+            "certificate_hash": "92a5e777b0e0335705f2952c8283db4ae2098219"
+          }
+        },
+        {
+          "client_id": "109048637104-8nvfk901nmggltcmciq10ub83qqdvnjh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmFyIsKWrskfBbmS_XzPkq26OSzHZf0Ac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109048637104-8nvfk901nmggltcmciq10ub83qqdvnjh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

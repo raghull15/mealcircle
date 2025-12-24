@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mealcircle/Donater/cart_details_page.dart';
-import 'package:mealcircle/widgets/user_profile_page.dart';
-const Color _kPrimaryColor = Color(0xFF2AC962);
+import 'package:mealcircle/services/user_profile_page.dart';
+
+import 'package:mealcircle/shared/design_system.dart';
+
+// Modern color replacements handled by DesignSystem
 
 class DonationItem {
   final Map<String, dynamic> shelterItem;
@@ -69,67 +72,137 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Reason for Cancellation',
-            style: GoogleFonts.playfairDisplay(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          content: Container(
-            height: 150,
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
+              color: AppColors.cardWhite,
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: TextField(
-              controller: _reasonControllers[index],
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Enter reason for cancellation...',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
-                contentPadding: const EdgeInsets.all(12),
-                border: InputBorder.none,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentOrange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.accentOrange,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Cancellation Reason',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _reasonControllers[index],
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: 'Enter reason for cancellation...',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textLight,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.backgroundCream,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.borderLight),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.borderLight),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.textDark),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.borderLight),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.poppins(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _currentDonations[index].isCancelled = true;
+                              _currentDonations[index].cancellationReason =
+                                  _reasonControllers[index]!.text.isNotEmpty
+                                      ? _reasonControllers[index]!.text
+                                      : 'No reason provided';
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accentOrange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            'Confirm',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              style: GoogleFonts.poppins(fontSize: 14),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.playfairDisplay(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _currentDonations[index].isCancelled = true;
-                  _currentDonations[index].cancellationReason =
-                      _reasonControllers[index]!.text.isNotEmpty
-                          ? _reasonControllers[index]!.text
-                          : 'No reason provided';
-                });
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade400,
-              ),
-              child: Text(
-                'Confirm Cancel',
-                style: GoogleFonts.playfairDisplay(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         );
       },
     );
@@ -138,34 +211,39 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style:
-          GoogleFonts.playfairDisplay(fontSize: 16, fontWeight: FontWeight.bold),
+      style: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textDark,
+        letterSpacing: -0.3,
+      ),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 150,
+            width: 130,
             child: Text(
               label,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textLight,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value.isEmpty ? 'N/A' : value,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 14,
-                color: Colors.grey.shade700,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -178,272 +256,373 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
     final shelter = donation.shelterItem;
     final isCancelled = donation.isCancelled;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle(
-              'Donation ${index + 1}: ${shelter['name'] ?? 'Shelter'}'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isCancelled ? Colors.red.shade50 : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isCancelled ? Colors.red.shade300 : Colors.black12,
-                width: isCancelled ? 2 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return TweenAnimationBuilder(
+      duration: Duration(milliseconds: 300 + (index * 50)),
+      tween: Tween<double>(begin: 0, end: 1),
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: isCancelled ? Colors.red.shade50 : AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isCancelled ? Colors.red.shade200 : AppColors.borderLight,
+            width: isCancelled ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        shelter['image'] ?? 'https://via.placeholder.com/50',
-                        height: 50,
-                        width: 50,
-                        fit: BoxFit.cover,
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      shelter['image'] ?? 'https://via.placeholder.com/50',
+                      height: 60,
+                      width: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(
+                        height: 60,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryGreen.withOpacity(0.2),
+                              AppColors.accentOrange.withOpacity(0.2),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 28,
+                          color: AppColors.textLight,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            shelter['name'] ?? 'Community Shelter',
-                            style: GoogleFonts.playfairDisplay(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shelter['name'] ?? 'Shelter',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.textDark,
                           ),
-                          if (isCancelled)
-                            Text(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        if (isCancelled)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
                               'CANCELLED',
-                              style: GoogleFonts.playfairDisplay(
-                                color: Colors.red.shade600,
+                              style: GoogleFonts.inter(
+                                color: Colors.red.shade700,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: 10,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                  ],
-                ),
-                const Divider(height: 24),
-                _buildSectionTitle('Your Donation Details:'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Food Type:', donation.foodType),
-                _buildInfoRow('Quantity (servings):',
-                    '${donation.quantity} servings'),
-                _buildInfoRow('Date/Time Available:', donation.dateTime),
-                const SizedBox(height: 16),
-                _buildSectionTitle('Recipient Details :'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Name:', donation.recipientName),
-                _buildInfoRow('Address:', donation.recipientAddress),
-                _buildInfoRow('Phone.no:', donation.recipientPhone),
-                const SizedBox(height: 16),
-                _buildSectionTitle('Delivery Method :'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      donation.deliveryByDonor
-                          ? Icons.local_shipping
-                          : Icons.person_pin_circle,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Divider(color: AppColors.borderLight, height: 1),
+              const SizedBox(height: 16),
+              _buildSectionTitle('Donation Details:'),
+              const SizedBox(height: 12),
+              _buildInfoRow('Food Type:', donation.foodType),
+              _buildInfoRow(
+                'Quantity:',
+                '${donation.quantity} servings',
+              ),
+              _buildInfoRow('Available:', donation.dateTime),
+              const SizedBox(height: 16),
+              _buildSectionTitle('Recipient Details:'),
+              const SizedBox(height: 12),
+              _buildInfoRow('Name:', donation.recipientName),
+              _buildInfoRow('Address:', donation.recipientAddress),
+              _buildInfoRow('Phone:', donation.recipientPhone),
+              const SizedBox(height: 16),
+              _buildSectionTitle('Delivery Method:'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
                       color: donation.deliveryByDonor
-                          ? _kPrimaryColor
-                          : Colors.orange,
+                          ? AppColors.primaryGreen.withOpacity(0.1)
+                          : AppColors.accentOrange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      donation.deliveryByDonor
+                          ? Icons.local_shipping_rounded
+                          : Icons.person_pin_circle_rounded,
+                      color: donation.deliveryByDonor
+                          ? AppColors.primaryGreen
+                          : AppColors.accentOrange,
                       size: 20,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      donation.deliveryByDonor
+                          ? 'Delivered by donor'
+                          : 'Picked up by recipient',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Divider(color: AppColors.borderLight, height: 1),
+              const SizedBox(height: 16),
+              Text(
+                'Cancel this donation?',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (!isCancelled) {
+                          _showReasonDialog(index);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCancelled
+                            ? AppColors.textLight.withOpacity(0.2)
+                            : AppColors.accentOrange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        elevation: isCancelled ? 0 : 2,
+                      ),
                       child: Text(
-                        donation.deliveryByDonor
-                            ? 'The food will be delivered by the donor'
-                            : 'The recipient will pickup the food',
-                        style: GoogleFonts.playfairDisplay(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                Text(
-                  'Do you want to cancel this donation?',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (!isCancelled) {
-                            _showReasonDialog(index);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isCancelled 
-                              ? Colors.grey.shade300 
-                              : Colors.red.shade400,
-                          minimumSize: const Size(double.infinity, 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        'Yes',
+                        style: GoogleFonts.poppins(
+                          color: isCancelled ? AppColors.textLight : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
                         ),
-                        child: Text(
-                          'Yes',
-                          style: GoogleFonts.poppins(
-                            color: isCancelled ? Colors.grey.shade600 : Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (isCancelled) {
-                            setState(() {
-                              _currentDonations[index].isCancelled = false;
-                              _currentDonations[index].cancellationReason = '';
-                              _reasonControllers[index]?.clear();
-                            });
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isCancelled 
-                              ? Colors.green.shade400 
-                              : Colors.grey.shade300,
-                          minimumSize: const Size(double.infinity, 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        child: Text(
-                          'No',
-                          style: GoogleFonts.poppins(
-                            color: isCancelled ? Colors.white : Colors.grey.shade600,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (isCancelled) ...[
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.shade300),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Cancellation Reason:',
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red.shade700,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            donation.cancellationReason,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.playfairDisplay(
-                              fontSize: 12,
-                              color: Colors.red.shade600,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ),
-                ]
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (isCancelled) {
+                          setState(() {
+                            _currentDonations[index].isCancelled = false;
+                            _currentDonations[index].cancellationReason = '';
+                            _reasonControllers[index]?.clear();
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCancelled
+                            ? AppColors.primaryGreen
+                            : AppColors.borderLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'No',
+                        style: GoogleFonts.poppins(
+                          color: isCancelled ? Colors.white : AppColors.textLight,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (isCancelled) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.shade300),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reason:',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        donation.cancellationReason,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.red.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ]
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   PreferredSizeWidget _buildTopBar(BuildContext context) {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryGreen,
+              AppColors.primaryGreen.withOpacity(0.85),
+            ],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
-              blurRadius: 4,
-              offset: Offset(0, .2),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          toolbarHeight: customHeight,
-          automaticallyImplyLeading: false,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            'Donation Confirmation',
-            style: GoogleFonts.imFellGreatPrimerSc(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person_outline,
-                  color: Colors.white, size: 26),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const UserProfilePage(),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.white,
+                    size: 20,
                   ),
-                );
-              },
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    'Donation Confirmation',
+                    style: AppTypography.headingMedium(color: Colors.white),
+                  ),
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const UserProfilePage(),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textLight,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -451,30 +630,41 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
   }
 
   Widget _buildProceedButton(BuildContext context) {
+    final confirmedCount =
+        _currentDonations.where((item) => !item.isCancelled).length;
+    final isValid = confirmedCount > 0;
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CartDetailsPage(
-                donations: _currentDonations,
-              ),
-            ),
-          );
-        },
+        onPressed: isValid
+            ? () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CartDetailsPage(
+                      donations: _currentDonations,
+                    ),
+                  ),
+                );
+              }
+            : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: AppColors.primaryGreen,
+          disabledBackgroundColor: AppColors.textLight.withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          elevation: 2,
         ),
         child: Text(
           'Proceed to Donation',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: 15,
+            letterSpacing: -0.3,
           ),
         ),
       ),
@@ -483,109 +673,90 @@ class _DonationConfirmationPageState extends State<DonationConfirmationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final int confirmedDonations =
+    final confirmedDonations =
         _currentDonations.where((item) => !item.isCancelled).length;
-    final int cancelledDonations =
+    final cancelledDonations =
         _currentDonations.where((item) => item.isCancelled).length;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
+      backgroundColor: AppColors.backgroundCream,
       appBar: _buildTopBar(context),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Column(
                 children: [
-                  Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text(
-                        '${_currentDonations.length}',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                      Text(
+                      _buildStatCard(
                         'Total',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.blue.shade600,
-                        ),
+                        '${_currentDonations.length}',
+                        Colors.blue,
                       ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        '$confirmedDonations',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                      Text(
+                      const SizedBox(width: 8),
+                      _buildStatCard(
                         'Confirmed',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.green.shade600,
-                        ),
+                        '$confirmedDonations',
+                        AppColors.primaryGreen,
                       ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        '$cancelledDonations',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade700,
-                        ),
-                      ),
-                      Text(
+                      const SizedBox(width: 8),
+                      _buildStatCard(
                         'Cancelled',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.red.shade600,
-                        ),
+                        '$cancelledDonations',
+                        AppColors.accentOrange,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            if (_currentDonations.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 40, bottom: 40),
-                child: Center(
-                  child: Text(
-                    'No donations to process.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-              ),
-            ..._currentDonations.asMap().entries.map((entry) {
-              return _buildSingleDonationCard(entry.value, entry.key);
-            }).toList(),
             const SizedBox(height: 24),
-            if (_currentDonations.isNotEmpty)
+            if (_currentDonations.isEmpty)
+              Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 80,
+                      color: AppColors.textLight.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No donations to process',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              ..._currentDonations.asMap().entries.map((entry) {
+                return _buildSingleDonationCard(entry.value, entry.key);
+              }).toList(),
+              const SizedBox(height: 24),
               _buildProceedButton(context),
+            ],
+            const SizedBox(height: 24),
           ],
         ),
       ),

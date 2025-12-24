@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'donor_post_model.dart';
-import 'donor_post_service.dart';
-import 'package:mealcircle/widgets/user_service.dart';
-
-const Color _kPrimaryColor = Color(0xFF2AC962);
+import 'package:mealcircle/shared/design_system.dart';
+import 'package:mealcircle/services/donation_firebase_service.dart';
+import 'package:mealcircle/services/user_provider.dart';
+import 'package:mealcircle/Donater/donor_post_service.dart';
+import 'package:mealcircle/services/firebase_service.dart';
+import 'package:provider/provider.dart';
 
 class CreateDonationPostScreen extends StatefulWidget {
   const CreateDonationPostScreen({super.key});
@@ -26,7 +26,6 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
 
   final _imagePicker = ImagePicker();
   final _postService = DonorPostService();
-  final _userService = UserService();
 
   String? _imagePath;
   bool _isLoading = false;
@@ -37,14 +36,19 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
     _loadUserAddress();
   }
 
-  void _loadUserAddress() {
-    final user = _userService.currentUser;
+  void _loadUserAddress() async {
+    final userProvider = context.read<UserProvider>();
+    final user = userProvider.currentUser;
     if (user != null) {
-      if (user.fullAddress.isNotEmpty) {
-        _addressController.text = user.fullAddress;
-      }
-      if (user.location.isNotEmpty) {
-        _locationController.text = user.location;
+      if (mounted) {
+        setState(() {
+          if (user.fullAddress.isNotEmpty) {
+            _addressController.text = user.fullAddress;
+          }
+          if (user.location.isNotEmpty) {
+            _locationController.text = user.location;
+          }
+        });
       }
     }
   }
@@ -77,8 +81,17 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to pick image: $e'),
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text('Failed to pick image: $e'),
+              ],
+            ),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
@@ -88,31 +101,77 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
   void _showImageSourceDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Select Image Source',
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: _kPrimaryColor),
-              title: Text('Camera', style: GoogleFonts.playfairDisplay()),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: _kPrimaryColor),
-              title: Text('Gallery', style: GoogleFonts.playfairDisplay()),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select Image Source',
+                style: AppTypography.headingSmall(color: AppColors.textDark),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickImage(ImageSource.camera);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.camera_alt, color: AppColors.primaryGreen, size: 32),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Camera',
+                              style: AppTypography.labelMedium(color: AppColors.textDark),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _pickImage(ImageSource.gallery);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentOrange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.accentOrange.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.photo_library, color: AppColors.accentOrange, size: 32),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Gallery',
+                              style: AppTypography.labelMedium(color: AppColors.textDark),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -120,64 +179,76 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
 
   Future<void> _createPost() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (_imagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add a photo of the food'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    final user = _userService.currentUser;
-    if (user == null) {
+    
+    final userProvider = context.read<UserProvider>();
+    final user = userProvider.currentUser;
+    if (user == null || user.email == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User not found. Please login again.'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Please log in again to post')),
         );
       }
       return;
     }
 
-    final post = DonorPost(
-      id: _postService.generatePostId(),
+    setState(() => _isLoading = true);
+
+    // Use local image path
+    String? imageUrl = _imagePath;
+
+    final post = DonorPostFirebase(
+      id: DonationFirebaseService().generateDonationId(),
       donorEmail: user.email!,
       donorName: user.name ?? 'Anonymous',
       donorPhone: user.phone,
       foodType: _foodTypeController.text.trim(),
       servings: int.parse(_servingsController.text.trim()),
-      imagePath: _imagePath,
+      imagePath: imageUrl,
       description: _descriptionController.text.trim(),
       address: _addressController.text.trim(),
       location: _locationController.text.trim(),
+      donorType: user.userType,
       createdAt: DateTime.now(),
     );
 
-    final success = await _postService.addPost(post);
+    final success = await DonationFirebaseService().createDonation(post);
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Donation posted successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Text('Donation posted successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.primaryGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to post donation'),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Text('Failed to post donation'),
+              ],
+            ),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
@@ -187,10 +258,10 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
+      backgroundColor: AppColors.backgroundCream,
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -198,7 +269,7 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
             children: [
               _buildImagePicker(),
               const SizedBox(height: 24),
-              _buildTextField(
+              _buildModernTextField(
                 controller: _foodTypeController,
                 label: 'Food Type',
                 hint: 'e.g., Biryani, Pizza, Rice & Curry',
@@ -211,7 +282,7 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              _buildModernTextField(
                 controller: _servingsController,
                 label: 'Number of Servings',
                 hint: 'e.g., 10',
@@ -228,7 +299,7 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              _buildModernTextField(
                 controller: _descriptionController,
                 label: 'Description (Optional)',
                 hint: 'Additional details about the food',
@@ -236,7 +307,7 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              _buildModernTextField(
                 controller: _addressController,
                 label: 'Pickup Address',
                 hint: 'Enter full address',
@@ -250,7 +321,7 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              _buildModernTextField(
                 controller: _locationController,
                 label: 'Location',
                 hint: 'City, State',
@@ -265,34 +336,41 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _createPost,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kPrimaryColor,
+                    backgroundColor: AppColors.primaryGreen,
+                    disabledBackgroundColor: AppColors.primaryGreen.withOpacity(0.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 4,
+                    shadowColor: AppColors.primaryGreen.withOpacity(0.3),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                      ? SizedBox(
+                          height: 24,
+                          width: 24,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : Text(
-                          'Post Donation',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white, size: 22),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Create Donation Post',
+                              style: AppTypography.headingMedium(color: Colors.white),
+                            ),
+                          ],
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -301,49 +379,39 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.85)],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(0, 3),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: SafeArea(
-          bottom: false,
-          child: SizedBox(
-            height: customHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                const SizedBox(width: 4.8),
                 IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 26,
-                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
+                 Expanded(
                   child: Text(
-                    'Create Donation Post',
-                    style: GoogleFonts.imFellGreatPrimerSc(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                    'Donation post',
+                    style: AppTypography.headingMedium(color: Colors.white),
                   ),
                 ),
-                const SizedBox(width: 48),
               ],
             ),
           ),
@@ -353,40 +421,66 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
   }
 
   Widget _buildImagePicker() {
-    return GestureDetector(
-      onTap: _showImageSourceDialog,
-      child: Container(
-        width: double.infinity,
-        height: 200,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kPrimaryColor, width: 2),
-        ),
-        child: _imagePath != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.file(File(_imagePath!), fit: BoxFit.cover),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.camera_alt, size: 50, color: Colors.grey.shade600),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Tap to add food photo',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ],
+    return TweenAnimationBuilder(
+      duration: const Duration(milliseconds: 500),
+      tween: Tween<double>(begin: 0, end: 1),
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: GestureDetector(
+        onTap: _showImageSourceDialog,
+        child: Container(
+          width: double.infinity,
+          height: 220,
+          decoration: BoxDecoration(
+            color: AppColors.cardWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primaryGreen, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: _imagePath != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(File(_imagePath!), fit: BoxFit.cover),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.camera_alt, size: 48, color: AppColors.primaryGreen),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Tap to add food photo',
+                      style: AppTypography.headingSmall(color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Camera or Gallery',
+                      style: AppTypography.labelSmall(color: AppColors.textLight),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildModernTextField({
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -395,56 +489,57 @@ class _CreateDonationPostScreenState extends State<CreateDonationPostScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+    return TweenAnimationBuilder(
+      duration: const Duration(milliseconds: 400),
+      tween: Tween<double>(begin: 0, end: 1),
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTypography.labelMedium(color: AppColors.textDark),
           ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          validator: validator,
-          style: GoogleFonts.playfairDisplay(fontSize: 15),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.playfairDisplay(
-              fontSize: 14,
-              color: Colors.grey.shade500,
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardWhite,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLight, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            prefixIcon: Icon(icon, color: _kPrimaryColor),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: _kPrimaryColor, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.red),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              validator: validator,
+              style: AppTypography.bodyMedium(color: AppColors.textDark),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppTypography.labelSmall(color: AppColors.textLight),
+                prefixIcon: Icon(icon, color: AppColors.primaryGreen, size: 20),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                errorStyle: AppTypography.labelSmall(color: Colors.red),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

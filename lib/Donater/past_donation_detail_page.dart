@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:mealcircle/widgets/user_profile_page.dart';
+import 'package:mealcircle/services/user_profile_page.dart';
 import 'package:mealcircle/Donater/past_donation_page.dart';
 
-const Color _kPrimaryColor = Color(0xFF2AC962);
+import 'package:mealcircle/shared/design_system.dart';
+
+// Traditional color scheme replacements handled by AppColors and AppTypography
 
 class PastDonationDetailPage extends StatelessWidget {
   final PastDonation donation;
@@ -17,55 +19,48 @@ class PastDonationDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isCancelled = donation.status == "Cancelled";
-    final Color statusColor =
-        isCancelled ? Colors.red.shade700 : Colors.green.shade700;
+    final Color statusColor = isCancelled ? Colors.red : AppColors.primaryGreen;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
+      backgroundColor: AppColors.backgroundCream,
       appBar: _buildTopBar(context),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Status Banner
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
               decoration: BoxDecoration(
-                color: isCancelled
-                    ? Colors.red.shade50
-                    : Colors.green.shade50,
-                borderRadius: BorderRadius.circular(10),
+                color: isCancelled ? Colors.red.shade50 : AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isCancelled
-                      ? Colors.red.shade200
-                      : Colors.green.shade200,
+                      ? Colors.red.withOpacity(0.2)
+                      : AppColors.primaryGreen.withOpacity(0.2),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isCancelled ? Icons.cancel : Icons.check_circle,
+                    isCancelled ? Icons.cancel_rounded : Icons.check_circle_rounded,
                     color: statusColor,
                     size: 28,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    isCancelled
-                        ? "DONATION CANCELLED"
-                        : "DONATION COMPLETED",
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
+                    isCancelled ? "DONATION CANCELLED" : "DONATION COMPLETED",
+                    style: AppTypography.headingMedium(color: statusColor),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
+
+            // Shelter Information
             _buildSectionTitle("Shelter Information"),
             const SizedBox(height: 10),
             _buildCard(
@@ -73,14 +68,21 @@ class PastDonationDetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.network(
-                      donation.shelterItem["image"] ?? "https://via.placeholder.com/150",
-                      height: 75,
-                      width: 90,
+                      donation.shelterItem["image"] ??
+                          "https://via.placeholder.com/100",
+                      height: 80,
+                      width: 100,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
-                          Container(color: Colors.grey[300], height: 75, width: 90),
+                          Container(
+                        color: AppColors.borderLight,
+                        height: 80,
+                        width: 100,
+                        child: Icon(Icons.home_rounded,
+                            size: 40, color: AppColors.textLight),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -90,23 +92,22 @@ class PastDonationDetailPage extends StatelessWidget {
                       children: [
                         Text(
                           donation.shelterItem["name"] ?? "Shelter Name",
-                          style: GoogleFonts.playfairDisplay(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          style: AppTypography.labelLarge(color: AppColors.textDark),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
+                            Icon(Icons.location_on_rounded,
+                                size: 14, color: AppColors.textLight),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 donation.shelterItem["location"] ?? "N/A",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
+                                style: AppTypography.bodySmall(color: AppColors.textLight),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -114,14 +115,12 @@ class PastDonationDetailPage extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
+                            Icon(Icons.phone_rounded,
+                                size: 14, color: AppColors.textLight),
                             const SizedBox(width: 4),
                             Text(
                               donation.shelterItem["phone"] ?? "N/A",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
+                              style: AppTypography.bodySmall(color: AppColors.textLight),
                             ),
                           ],
                         ),
@@ -132,6 +131,7 @@ class PastDonationDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+
             // Donation Details
             _buildSectionTitle("Donation Details"),
             const SizedBox(height: 10),
@@ -139,19 +139,21 @@ class PastDonationDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow(Icons.fastfood, "Food Type", donation.foodType),
-                  const Divider(height: 24),
+                  _buildDetailRow(Icons.restaurant_rounded, "Food Type",
+                      donation.foodType),
+                  const Divider(height: 18),
+                  _buildDetailRow(Icons.local_dining_rounded, "Quantity",
+                      "${donation.quantity} servings"),
+                  const Divider(height: 18),
                   _buildDetailRow(
-                      Icons.local_dining, "Quantity", "${donation.quantity} servings"),
-                  const Divider(height: 24),
-                  _buildDetailRow(
-                    Icons.date_range,
+                    Icons.calendar_today_rounded,
                     "Donation Date",
-                    DateFormat('MMM dd, yyyy').format(donation.donationDate),
+                    DateFormat('MMM dd, yyyy')
+                        .format(donation.donationDate),
                   ),
-                  const Divider(height: 24),
+                  const Divider(height: 18),
                   _buildDetailRow(
-                    Icons.access_time,
+                    Icons.access_time_rounded,
                     "Time",
                     DateFormat('hh:mm a').format(donation.donationDate),
                   ),
@@ -159,6 +161,7 @@ class PastDonationDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+
             // Recipient Details
             _buildSectionTitle("Recipient Details"),
             const SizedBox(height: 10),
@@ -166,16 +169,19 @@ class PastDonationDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow(Icons.person, "Name", donation.recipientName),
-                  const Divider(height: 24),
+                  _buildDetailRow(Icons.person_rounded, "Name",
+                      donation.recipientName),
+                  const Divider(height: 18),
                   _buildDetailRow(
-                      Icons.home, "Address", donation.recipientAddress),
-                  const Divider(height: 24),
-                  _buildDetailRow(Icons.phone, "Phone", donation.recipientPhone),
+                      Icons.home_rounded, "Address", donation.recipientAddress),
+                  const Divider(height: 18),
+                  _buildDetailRow(
+                      Icons.phone_rounded, "Phone", donation.recipientPhone),
                 ],
               ),
             ),
-            // Only show Delivery Method if NOT cancelled
+
+            // Delivery Method (only if not cancelled)
             if (!isCancelled) ...[
               const SizedBox(height: 20),
               _buildSectionTitle("Delivery Method"),
@@ -184,38 +190,38 @@ class PastDonationDetailPage extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: _kPrimaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: donation.deliveryByDonor
+                            ? AppColors.primaryGreen.withOpacity(0.1)
+                            : AppColors.accentOrange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         donation.deliveryByDonor
-                            ? Icons.local_shipping
-                            : Icons.person_pin_circle,
+                            ? Icons.local_shipping_rounded
+                            : Icons.person_pin_circle_rounded,
                         color: donation.deliveryByDonor
-                            ? _kPrimaryColor
-                            : Colors.orange,
-                        size: 28,
+                            ? AppColors.primaryGreen
+                            : AppColors.accentOrange,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         donation.deliveryByDonor
                             ? 'The food was delivered by the donor'
                             : 'The recipient picked up the food',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTypography.labelMedium(color: AppColors.textDark),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-            // Show cancellation details if cancelled
+
+            // Cancellation Details (only if cancelled)
             if (isCancelled) ...[
               const SizedBox(height: 20),
               _buildSectionTitle("Cancellation Details"),
@@ -227,30 +233,27 @@ class PastDonationDetailPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.cancel, color: Colors.red.shade700, size: 24),
-                        const SizedBox(width: 12),
+                        Icon(Icons.cancel_rounded,
+                            color: Colors.red, size: 22),
+                        const SizedBox(width: 10),
                         Text(
                           "Reason for Cancellation",
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
-                          ),
+                          style: AppTypography.labelMedium(color: Colors.red),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       donation.cancellationReason ?? "No reason provided",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.red.shade600,
-                      ),
+                      style: AppTypography.bodySmall(color: Colors.red.shade700),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ],
+
             const SizedBox(height: 20),
           ],
         ),
@@ -259,53 +262,61 @@ class PastDonationDetailPage extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildTopBar(BuildContext context) {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.85)],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
-              blurRadius: 4,
-              offset: Offset(0, .2),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          toolbarHeight: customHeight,
-          automaticallyImplyLeading: false,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            "Donation Details",
-            style: GoogleFonts.imFellGreatPrimerSc(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person_outline,
-                  color: Colors.white, size: 26),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const UserProfilePage(),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    "Donation Details",
+                    style: AppTypography.headingMedium(color: Colors.white),
                   ),
-                );
-              },
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 20),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const UserProfilePage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
         ),
       ),
     );
@@ -314,24 +325,22 @@ class PastDonationDetailPage extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: GoogleFonts.playfairDisplay(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      ),
+      style: AppTypography.headingSmall(color: AppColors.textDark),
     );
   }
 
-  Widget _buildCard({required Widget child, Color color = Colors.white}) {
+  Widget _buildCard(
+      {required Widget child, Color color = Colors.white}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -347,10 +356,10 @@ class PastDonationDetailPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _kPrimaryColor.withOpacity(0.1),
+            color: AppColors.primaryGreen.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 20, color: _kPrimaryColor),
+          child: Icon(icon, size: 18, color: AppColors.primaryGreen),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -359,18 +368,14 @@ class PastDonationDetailPage extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: AppTypography.labelSmall(color: AppColors.textLight),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 value,
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.labelMedium(color: AppColors.textDark),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

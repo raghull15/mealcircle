@@ -1,91 +1,138 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mealcircle/Donater/past_donation_page.dart';
+import 'package:mealcircle/services/firebase_service.dart';
+import 'package:mealcircle/services/user_service.dart';
+import 'past_donation_page.dart';
 
 class PastDonationManager {
   static final PastDonationManager _instance = PastDonationManager._internal();
   factory PastDonationManager() => _instance;
   PastDonationManager._internal();
 
-  static const String _storageKey = 'past_donations';
+  static const String _storageKey = 'local_past_donations';
+  final FirebaseService _firebase = FirebaseService();
+  final UserService _userService = UserService();
   List<PastDonation> _pastDonations = [];
 
   List<PastDonation> get allDonations => List.unmodifiable(_pastDonations);
 
+  Future<List<PastDonation>> _loadAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data == null) return [];
+    final List<dynamic> decoded = jsonDecode(data);
+    return decoded.map((item) {
+      return PastDonation(
+        shelterItem: Map<String, dynamic>.from(item['shelterItem']),
+        foodType: item['foodType'],
+        quantity: item['quantity'],
+        donationDate: DateTime.tryParse(item['donationDate'] ?? '') ?? DateTime.now(),
+        status: item['status'],
+        recipientName: item['recipientName'],
+        recipientAddress: item['recipientAddress'],
+        recipientPhone: item['recipientPhone'],
+        deliveryByDonor: item['deliveryByDonor'],
+        cancellationReason: item['cancellationReason'],
+        donorEmail: item['donorEmail'],
+      );
+    }).toList().cast<PastDonation>();
+  }
+
+  Future<void> _saveAll(List<PastDonation> donations) async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = jsonEncode(donations.map((d) => {
+      'donorEmail': d.donorEmail,
+      'shelterItem': d.shelterItem,
+      'foodType': d.foodType,
+      'quantity': d.quantity,
+      'donationDate': d.donationDate.toIso8601String(),
+      'status': d.status,
+      'recipientName': d.recipientName,
+      'recipientAddress': d.recipientAddress,
+      'recipientPhone': d.recipientPhone,
+      'deliveryByDonor': d.deliveryByDonor,
+      'cancellationReason': d.cancellationReason,
+    }).toList());
+    await prefs.setString(_storageKey, data);
+  }
+
   Future<void> loadDonations() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? donationsJson = prefs.getString(_storageKey);
-
-      if (donationsJson != null) {
-        final List<dynamic> decodedList = json.decode(donationsJson);
-        _pastDonations = decodedList.map((item) {
-          return PastDonation(
-            shelterItem: Map<String, dynamic>.from(item['shelterItem']),
-            foodType: item['foodType'],
-            quantity: item['quantity'],
-            donationDate: DateTime.parse(item['donationDate']),
-            status: item['status'],
-            recipientName: item['recipientName'],
-            recipientAddress: item['recipientAddress'],
-            recipientPhone: item['recipientPhone'],
-            deliveryByDonor: item['deliveryByDonor'],
-            cancellationReason: item['cancellationReason'],
-          );
-        }).toList();
+      final user = await _userService.loadUser();
+      if (user == null) {
+        _pastDonations = [];
+        return;
       }
+
+      final all = await _loadAll();
+      _pastDonations = all
+          .where((d) => d.donorEmail == user.email)
+          .toList()
+        ..sort((a, b) => b.donationDate.compareTo(a.donationDate));
     } catch (e) {
-      print('Error loading donations: $e');
+      print('❌ Error loading past donations locally: $e');
       _pastDonations = [];
     }
   }
 
-  Future<void> _saveDonations() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> donationsList = _pastDonations.map((
-        donation,
-      ) {
-        return {
-          'shelterItem': donation.shelterItem,
-          'foodType': donation.foodType,
-          'quantity': donation.quantity,
-          'donationDate': donation.donationDate.toIso8601String(),
-          'status': donation.status,
-          'recipientName': donation.recipientName,
-          'recipientAddress': donation.recipientAddress,
-          'recipientPhone': donation.recipientPhone,
-          'deliveryByDonor': donation.deliveryByDonor,
-          'cancellationReason': donation.cancellationReason,
-        };
-      }).toList();
-
-      final String donationsJson = json.encode(donationsList);
-      await prefs.setString(_storageKey, donationsJson);
-    } catch (e) {
-      print('Error saving donations: $e');
-    }
-  }
-
   Future<void> addDonation(PastDonation donation) async {
-    _pastDonations.insert(0, donation);
-    await _saveDonations();
+    try {
+      final user = await _userService.loadUser();
+      if (user == null) return;
+
+      // Ensure donorEmail is set
+      donation.donorEmail = user.email;
+
+      final all = await _loadAll();
+      all.add(donation);
+      await _saveAll(all);
+      
+      _pastDonations.insert(0, donation);
+      print('✅ Past donation saved locally');
+    } catch (e) {
+      print('❌ Error adding past donation locally: $e');
+    }
   }
 
   Future<void> addMultipleDonations(List<PastDonation> donations) async {
     for (var donation in donations) {
-      _pastDonations.insert(0, donation);
+      await addDonation(donation);
     }
-    await _saveDonations();
   }
 
   Future<void> deleteDonation(PastDonation donation) async {
-    _pastDonations.remove(donation);
-    await _saveDonations();
+    try {
+      final user = await _userService.loadUser();
+      if (user == null) return;
+
+      final all = await _loadAll();
+      all.removeWhere((d) => 
+        d.donorEmail == user.email && 
+        d.donationDate.isAtSameMomentAs(donation.donationDate));
+      
+      await _saveAll(all);
+      
+      _pastDonations.removeWhere((d) => 
+        d.donationDate.isAtSameMomentAs(donation.donationDate));
+    } catch (e) {
+      print('❌ Error deleting past donation locally: $e');
+    }
   }
 
   Future<void> clearAll() async {
-    _pastDonations.clear();
-    await _saveDonations();
+    try {
+      final user = await _userService.loadUser();
+      if (user == null) return;
+
+      final all = await _loadAll();
+      all.removeWhere((d) => d.donorEmail == user.email);
+      await _saveAll(all);
+      
+      _pastDonations.clear();
+      print('✅ All past donations cleared locally');
+    } catch (e) {
+      print('❌ Error clearing past donations locally: $e');
+    }
   }
 }
+

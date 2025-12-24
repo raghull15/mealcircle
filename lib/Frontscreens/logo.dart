@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MealCircleLogo extends StatefulWidget {
-  const MealCircleLogo({super.key, required int size});
+  final double size;
+  const MealCircleLogo({super.key, required this.size});
 
   @override
-  _MealCircleLogoState createState() => _MealCircleLogoState();
+  State<MealCircleLogo> createState() => _MealCircleLogoState();
 }
 
 class _MealCircleLogoState extends State<MealCircleLogo>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _rotation;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -29,14 +31,17 @@ class _MealCircleLogoState extends State<MealCircleLogo>
 
     _controller.repeat(reverse: true);
 
-    Timer(const Duration(seconds: 5), () {
-      _controller.stop();
-      _controller.value = 0; // reset rotation to straight
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        _controller.stop();
+        _controller.value = 0; // reset rotation to straight
+      }
     });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -44,9 +49,9 @@ class _MealCircleLogoState extends State<MealCircleLogo>
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 220,
-      height: 220,
-      padding: const EdgeInsets.all(12),
+      width: widget.size,
+      height: widget.size,
+      padding: EdgeInsets.all(widget.size * (12 / 220)),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: const LinearGradient(
@@ -76,7 +81,7 @@ class _MealCircleLogoState extends State<MealCircleLogo>
           alignment: Alignment.center,
           children: [
             Container(
-              margin: const EdgeInsets.all(10),
+              margin: EdgeInsets.all(widget.size * (10 / 220)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -91,13 +96,13 @@ class _MealCircleLogoState extends State<MealCircleLogo>
                 Text(
                   'MEAL',
                   style: GoogleFonts.montserrat(
-                    fontSize: 22,
+                    fontSize: widget.size * (22 / 220),
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: widget.size * (4 / 220)),
                 AnimatedBuilder(
                   animation: _rotation,
                   builder: (context, child) {
@@ -106,17 +111,17 @@ class _MealCircleLogoState extends State<MealCircleLogo>
                       child: child,
                     );
                   },
-                  child: const Icon(
+                  child: Icon(
                     Icons.room_service_rounded,
-                    size: 52,
+                    size: widget.size * (52 / 220),
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: widget.size * (4 / 220)),
                 Text(
                   'CIRCLE',
                   style: GoogleFonts.montserrat(
-                    fontSize: 22,
+                    fontSize: widget.size * (22 / 220),
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                     letterSpacing: 1.5,

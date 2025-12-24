@@ -4,10 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'donor_post_model.dart';
 import 'donor_post_service.dart';
-import 'package:mealcircle/widgets/user_service.dart';
+import 'package:mealcircle/services/user_service.dart';
 import 'create_donation_post_screen.dart';
+import 'package:mealcircle/services/user_profile_page.dart';
+import 'package:mealcircle/shared/design_system.dart';
 
-const Color _kPrimaryColor = Color(0xFF2AC962);
+// Traditional color scheme replacements handled by AppColors and AppTypography
 
 class MyDonationsScreen extends StatefulWidget {
   const MyDonationsScreen({super.key});
@@ -30,7 +32,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
 
   Future<void> _loadMyPosts() async {
     setState(() => _isLoading = true);
-    
+
     final user = _userService.currentUser;
     if (user != null && user.email != null) {
       final posts = await _postService.getUserPosts(user.email!);
@@ -50,28 +52,100 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   Future<void> _deletePost(String postId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Delete Post',
-          style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Are you sure you want to delete this donation post?',
-          style: GoogleFonts.playfairDisplay(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.playfairDisplay()),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardWhite,
+            borderRadius: BorderRadius.circular(16),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Delete',
-              style: GoogleFonts.playfairDisplay(color: Colors.red),
-            ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.delete_outline_rounded,
+                        color: Colors.red, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Delete Post',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Are you sure you want to delete this donation post? This action cannot be undone.',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textLight,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.borderLight),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        elevation: 2,
+                      ),
+                      child: Text(
+                        'Delete',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -80,17 +154,45 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Post deleted successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded,
+                      color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Post deleted successfully',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.primaryGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(16),
             ),
           );
           _loadMyPosts();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to delete post'),
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.error_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Failed to delete post',
+                    style: GoogleFonts.inter(color: Colors.white),
+                  ),
+                ],
+              ),
               backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(16),
             ),
           );
         }
@@ -101,17 +203,39 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   Future<void> _toggleAvailability(DonorPost post) async {
     post.isAvailable = !post.isAvailable;
     final success = await _postService.updatePost(post);
-    
+
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              post.isAvailable
-                  ? 'Donation marked as available'
-                  : 'Donation marked as unavailable',
+            content: Row(
+              children: [
+                Icon(
+                  post.isAvailable
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    post.isAvailable
+                        ? 'Donation marked as available'
+                        : 'Donation marked as unavailable',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.primaryGreen,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
         _loadMyPosts();
@@ -119,91 +243,56 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
-      appBar: _buildAppBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: _kPrimaryColor))
-          : _myPosts.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _myPosts.length,
-                  itemBuilder: (context, index) {
-                    return _buildPostCard(_myPosts[index]);
-                  },
-                ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CreateDonationPostScreen(),
-            ),
-          );
-          if (result == true) {
-            _loadMyPosts();
-          }
-        },
-        backgroundColor: _kPrimaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'New Post',
-          style: GoogleFonts.playfairDisplay(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   PreferredSizeWidget _buildAppBar() {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.85)],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(0, 3),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: SafeArea(
-          bottom: false,
-          child: SizedBox(
-            height: customHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                const SizedBox(width: 4.8),
                 IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 26,
-                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'My Donation',
-                    style: GoogleFonts.imFellGreatPrimerSc(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                    'My Donations',
+                    style: AppTypography.headingMedium(color: Colors.white),
                   ),
                 ),
-                const SizedBox(width: 48),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 20),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const UserProfilePage()),
+                  ),
+                ),
               ],
             ),
           ),
@@ -217,22 +306,24 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.restaurant, size: 80, color: Colors.grey.shade400),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.restaurant_menu_rounded,
+                size: 50, color: AppColors.primaryGreen),
+          ),
           const SizedBox(height: 16),
           Text(
             'No donations posted yet',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: AppTypography.headingMedium(color: AppColors.textDark),
           ),
           const SizedBox(height: 8),
           Text(
             'Create your first donation post!',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: AppTypography.bodyMedium(color: AppColors.textLight),
           ),
         ],
       ),
@@ -240,179 +331,250 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   }
 
   Widget _buildPostCard(DonorPost post) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (post.imagePath != null)
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: Image.file(
-                File(post.imagePath!),
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+    return TweenAnimationBuilder(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween<double>(begin: 0, end: 1),
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        post.foodType,
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (post.imagePath != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  topRight: Radius.circular(14),
+                ),
+                child: Image.file(
+                  File(post.imagePath!),
+                  width: double.infinity,
+                  height: 180,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primaryGreen.withOpacity(0.1),
+                          AppColors.accentOrange.withOpacity(0.1),
+                        ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: post.isAvailable
-                            ? Colors.green.shade50
-                            : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: post.isAvailable
-                              ? Colors.green.shade300
-                              : Colors.red.shade300,
+                    child:
+                        Icon(Icons.restaurant, size: 50, color: AppColors.textLight),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          post.foodType,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      child: Text(
-                        post.isAvailable ? 'Available' : 'Unavailable',
-                        style: GoogleFonts.poppins(
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: post.isAvailable
+                              ? AppColors.primaryGreen.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: post.isAvailable
+                                ? AppColors.primaryGreen.withOpacity(0.3)
+                                : Colors.red.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          post.isAvailable ? 'Available' : 'Unavailable',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: post.isAvailable
+                                ? AppColors.primaryGreen
+                                : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.people_rounded,
+                          size: 14, color: AppColors.textLight),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${post.servings} servings',
+                        style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: post.isAvailable
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.people, size: 18, color: _kPrimaryColor),
-                    const SizedBox(width: 6),
+                    ],
+                  ),
+                  if (post.description != null &&
+                      post.description!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
                     Text(
-                      '${post.servings} servings',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
+                      post.description!,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.w400,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-                if (post.description != null && post.description!.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    post.description!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_rounded,
+                          size: 14, color: AppColors.accentOrange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          post.location ?? 'Location not specified',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.textLight,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 18, color: Colors.red),
-                    const SizedBox(width: 6),
-                    Expanded(
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time_rounded,
+                          size: 12, color: AppColors.textLight),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDate(post.createdAt),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (post.requestedBy.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentOrange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       child: Text(
-                        post.location ?? 'Location not specified',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+                        '${post.requestedBy.length} request(s)',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: AppColors.accentOrange,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Posted ${_formatDate(post.createdAt)}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-                if (post.requestedBy.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '${post.requestedBy.length} request(s)',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: _kPrimaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _toggleAvailability(post),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color: AppColors.primaryGreen.withOpacity(0.5)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                          ),
+                          icon: Icon(
+                            post.isAvailable
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            size: 16,
+                          ),
+                          label: Text(
+                            post.isAvailable
+                                ? 'Mark Unavailable'
+                                : 'Mark Available',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _deletePost(post.id),
+                          style: OutlinedButton.styleFrom(
+                            side:
+                                BorderSide(color: Colors.red.withOpacity(0.5)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                          ),
+                          icon: const Icon(Icons.delete_rounded, size: 16),
+                          label: Text(
+                            'Delete',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _toggleAvailability(post),
-                        icon: Icon(
-                          post.isAvailable ? Icons.visibility_off : Icons.visibility,
-                          size: 18,
-                        ),
-                        label: Text(
-                          post.isAvailable ? 'Mark Unavailable' : 'Mark Available',
-                          style: GoogleFonts.poppins(fontSize: 12),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _kPrimaryColor,
-                          side: const BorderSide(color: _kPrimaryColor),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _deletePost(post.id),
-                        icon: const Icon(Icons.delete, size: 18),
-                        label: Text(
-                          'Delete',
-                          style: GoogleFonts.poppins(fontSize: 12),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -423,15 +585,68 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        return '${difference.inMinutes} minutes ago';
+        return '${difference.inMinutes}m ago';
       }
-      return '${difference.inHours} hours ago';
+      return '${difference.inHours}h ago';
     } else if (difference.inDays == 1) {
       return 'Yesterday';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
+      return '${difference.inDays}d ago';
     } else {
-      return DateFormat('MMM dd, yyyy').format(date);
+      return DateFormat('MMM dd').format(date);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundCream,
+      appBar: _buildAppBar(),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryGreen,
+                strokeWidth: 3,
+              ),
+            )
+          : _myPosts.isEmpty
+              ? _buildEmptyState()
+              : SingleChildScrollView(
+                  padding: EdgeInsets.all(isMobile ? 14 : 16),
+                  child: Column(
+                    children: [
+                      ..._myPosts.map((post) => _buildPostCard(post)).toList(),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const CreateDonationPostScreen(),
+            ),
+          );
+          if (result == true) {
+            _loadMyPosts();
+          }
+        },
+        backgroundColor: AppColors.primaryGreen,
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+        label: Text(
+          'New Post',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
+    );
   }
 }

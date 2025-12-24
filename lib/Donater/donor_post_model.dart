@@ -9,6 +9,7 @@ class DonorPost {
   String? description;
   String? address;
   String? location;
+  String deliveryMethod;
   DateTime createdAt;
   bool isAvailable;
   List<String> requestedBy;
@@ -24,6 +25,7 @@ class DonorPost {
     this.description,
     this.address,
     this.location,
+    required this.deliveryMethod,
     required this.createdAt,
     this.isAvailable = true,
     List<String>? requestedBy,
@@ -41,6 +43,7 @@ class DonorPost {
       'description': description,
       'address': address,
       'location': location,
+      'deliveryMethod': deliveryMethod,
       'createdAt': createdAt.toIso8601String(),
       'isAvailable': isAvailable,
       'requestedBy': requestedBy,
@@ -59,6 +62,7 @@ class DonorPost {
       description: json['description'],
       address: json['address'],
       location: json['location'],
+      deliveryMethod: json['deliveryMethod'] ?? 'donor_delivery',
       createdAt: DateTime.parse(json['createdAt']),
       isAvailable: json['isAvailable'] ?? true,
       requestedBy: List<String>.from(json['requestedBy'] ?? []),

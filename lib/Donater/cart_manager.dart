@@ -41,6 +41,15 @@ class CartManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeItem(Map<String, dynamic> removedItem) {
+    final id = '${removedItem["name"]}_${removedItem["location"] ?? removedItem["distance"]}';
+    if (_selectedItemIds.contains(id)) {
+      _selectedItemIds.remove(id);
+      removedItem["selected"] = false;
+      notifyListeners();
+    }
+  }
+
   void clearCart() {
     _selectedItemIds.clear();
     for (var item in _allItems) {

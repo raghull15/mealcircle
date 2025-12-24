@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mealcircle/services/donation_firebase_service.dart';
 import 'donor_post_model.dart';
 
 class DonorPostService {
@@ -7,116 +6,102 @@ class DonorPostService {
   factory DonorPostService() => _instance;
   DonorPostService._internal();
 
-  static const String _postsKey = 'donor_posts';
+  final DonationFirebaseService _firebaseService = DonationFirebaseService();
+
+  /// Convert legacy DonorPost to DonorPostFirebase
+  DonorPostFirebase _toFirebase(DonorPost post) {
+    return DonorPostFirebase(
+      id: post.id,
+      donorEmail: post.donorEmail,
+      donorName: post.donorName,
+      donorPhone: post.donorPhone,
+      foodType: post.foodType,
+      servings: post.servings,
+      imagePath: post.imagePath,
+      description: post.description,
+      address: post.address,
+      location: post.location,
+      deliveryMethod: post.deliveryMethod,
+      createdAt: post.createdAt,
+      isAvailable: post.isAvailable,
+      requestedBy: post.requestedBy,
+    );
+  }
+
+  /// Convert DonorPostFirebase back to legacy DonorPost
+  DonorPost _fromFirebase(DonorPostFirebase post) {
+    return DonorPost(
+      id: post.id,
+      donorEmail: post.donorEmail,
+      donorName: post.donorName,
+      donorPhone: post.donorPhone,
+      foodType: post.foodType,
+      servings: post.servings,
+      imagePath: post.imagePath,
+      description: post.description,
+      address: post.address,
+      location: post.location,
+      deliveryMethod: post.deliveryMethod,
+      createdAt: post.createdAt,
+      isAvailable: post.isAvailable,
+      requestedBy: post.requestedBy,
+    );
+  }
 
   Future<List<DonorPost>> getAllPosts() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final postsJson = prefs.getString(_postsKey);
-      
-      if (postsJson != null) {
-        final List<dynamic> postsList = jsonDecode(postsJson);
-        return postsList.map((json) => DonorPost.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error loading posts: $e');
-      return [];
-    }
+    // For Donater side, "all posts" usually means "all posts by this user" 
+    // or all available posts depending on context. 
+    // Legacy implementation loaded all from SharedPreferences.
+    // For now, we'll fetch all available to match general expectation.
+    final firebasePosts = await _firebaseService.getAvailableDonations();
+    return firebasePosts.map((p) => _fromFirebase(p)).toList();
   }
 
   Future<List<DonorPost>> getAvailablePosts() async {
-    final posts = await getAllPosts();
-    return posts.where((post) => post.isAvailable).toList();
+    final firebasePosts = await _firebaseService.getAvailableDonations();
+    return firebasePosts.map((p) => _fromFirebase(p)).toList();
   }
 
   Future<List<DonorPost>> getUserPosts(String userEmail) async {
-    final posts = await getAllPosts();
-    return posts.where((post) => post.donorEmail == userEmail).toList();
+    final firebasePosts = await _firebaseService.getDonationsByDonor(userEmail);
+    return firebasePosts.map((p) => _fromFirebase(p)).toList();
   }
 
   Future<bool> addPost(DonorPost post) async {
-    try {
-      final posts = await getAllPosts();
-      posts.insert(0, post);
-      return await _savePosts(posts);
-    } catch (e) {
-      print('Error adding post: $e');
-      return false;
-    }
+    return await _firebaseService.createDonation(_toFirebase(post));
   }
 
   Future<bool> updatePost(DonorPost updatedPost) async {
-    try {
-      final posts = await getAllPosts();
-      final index = posts.indexWhere((post) => post.id == updatedPost.id);
-      
-      if (index != -1) {
-        posts[index] = updatedPost;
-        return await _savePosts(posts);
-      }
-      return false;
-    } catch (e) {
-      print('Error updating post: $e');
-      return false;
-    }
+    return await _firebaseService.updateDonation(_toFirebase(updatedPost));
   }
 
   Future<bool> deletePost(String postId) async {
-    try {
-      final posts = await getAllPosts();
-      posts.removeWhere((post) => post.id == postId);
-      return await _savePosts(posts);
-    } catch (e) {
-      print('Error deleting post: $e');
-      return false;
-    }
+    return await _firebaseService.deleteDonation(postId);
   }
 
   Future<bool> markAsUnavailable(String postId) async {
-    try {
-      final posts = await getAllPosts();
-      final index = posts.indexWhere((post) => post.id == postId);
-      
-      if (index != -1) {
-        posts[index].isAvailable = false;
-        return await _savePosts(posts);
-      }
-      return false;
-    } catch (e) {
-      print('Error marking post as unavailable: $e');
-      return false;
+    // This is similar to markAsOrdered in DonationFirebaseService
+    final post = await _firebaseService.getDonationById(postId);
+    if (post != null) {
+      post.isAvailable = false;
+      return await _firebaseService.updateDonation(post);
     }
+    return false;
   }
 
   Future<bool> addRequest(String postId, String userEmail) async {
-    try {
-      final posts = await getAllPosts();
-      final index = posts.indexWhere((post) => post.id == postId);
-      
-      if (index != -1 && !posts[index].requestedBy.contains(userEmail)) {
-        posts[index].requestedBy.add(userEmail);
-        return await _savePosts(posts);
+    final post = await _firebaseService.getDonationById(postId);
+    if (post != null) {
+      if (!post.requestedBy.contains(userEmail)) {
+        post.requestedBy.add(userEmail);
+        return await _firebaseService.updateDonation(post);
       }
-      return false;
-    } catch (e) {
-      print('Error adding request: $e');
-      return false;
+      return true; // Already requested
     }
-  }
-
-  Future<bool> _savePosts(List<DonorPost> posts) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final postsJson = jsonEncode(posts.map((post) => post.toJson()).toList());
-      return await prefs.setString(_postsKey, postsJson);
-    } catch (e) {
-      print('Error saving posts: $e');
-      return false;
-    }
+    return false;
   }
 
   String generatePostId() {
-    return 'post_${DateTime.now().millisecondsSinceEpoch}';
+    return _firebaseService.generateDonationId();
   }
 }

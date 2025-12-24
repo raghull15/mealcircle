@@ -2,9 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'user_service.dart';
+import 'package:mealcircle/services/user_service.dart';
+import 'package:mealcircle/services/user_profile_page.dart';
 
-const Color _kPrimaryColor = Color(0xFF2AC962);
+const Color _kPrimaryGreen = Color(0xFF00B562);
+const Color _kBackgroundCream = Color(0xFFFFFBF7);
+const Color _kAccentOrange = Color(0xFFFF6B35);
+const Color _kCardWhite = Color(0xFFFFFFFF);
+const Color _kTextDark = Color(0xFF1C1C1C);
+const Color _kTextLight = Color(0xFF6B7280);
+const Color _kBorderLight = Color(0xFFE5E7EB);
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -28,6 +35,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _pincodeController;
 
   String? _profileImagePath;
+  String? _shelterImagePath;
   String? _preferredDonationType;
   String? _deliveryMethod;
   bool _notificationsEnabled = true;
@@ -51,6 +59,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _stateController = TextEditingController(text: user.state ?? '');
       _pincodeController = TextEditingController(text: user.pincode ?? '');
       _profileImagePath = user.profileImagePath;
+      _shelterImagePath = user.shelterImagePath;
       _preferredDonationType = user.preferredDonationType;
       _deliveryMethod = user.deliveryMethod;
       _notificationsEnabled = user.notificationsEnabled;
@@ -70,32 +79,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 75,
-      );
-
-      if (image != null) {
-        setState(() {
-          _profileImagePath = image.path;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick image: $e'),
-            backgroundColor: Colors.red,
+  Future<String?> _pickImageGeneric() async {
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Choose Photo Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt, color: _kPrimaryGreen),
+                title: Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library, color: _kAccentOrange),
+                title: Text('Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
           ),
         );
-      }
+      },
+    );
+
+    if (source != null) {
+      final XFile? image = await _imagePicker.pickImage(source: source, maxWidth: 512, maxHeight: 512, imageQuality: 75);
+      return image?.path;
     }
+    return null;
   }
 
+  Future<void> _pickProfileImage() async {
+    final path = await _pickImageGeneric();
+    if (path != null) setState(() => _profileImagePath = path);
+  }
+
+  Future<void> _pickShelterImage() async {
+    final path = await _pickImageGeneric();
+    if (path != null) setState(() => _shelterImagePath = path);
+  }
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -111,6 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         currentUser.state = _stateController.text.trim();
         currentUser.pincode = _pincodeController.text.trim();
         currentUser.profileImagePath = _profileImagePath;
+        currentUser.shelterImagePath = _shelterImagePath;
         currentUser.preferredDonationType = _preferredDonationType;
         currentUser.deliveryMethod = _deliveryMethod;
         currentUser.notificationsEnabled = _notificationsEnabled;
@@ -122,17 +148,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully!'),
-                backgroundColor: Colors.green,
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Profile updated successfully!',
+                      style: GoogleFonts.inter(color: Colors.white),
+                    ),
+                  ],
+                ),
+                backgroundColor: _kPrimaryGreen,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                margin: const EdgeInsets.all(16),
               ),
             );
-            Navigator.pop(context, true); 
+            Navigator.pop(context, true);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to update profile'),
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.error_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Failed to update profile',
+                      style: GoogleFonts.inter(color: Colors.white),
+                    ),
+                  ],
+                ),
                 backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                margin: const EdgeInsets.all(16),
               ),
             );
           }
@@ -143,18 +193,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
+      backgroundColor: _kBackgroundCream,
       appBar: _buildTopBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 14 : 16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _buildProfileImagePicker(),
-              const SizedBox(height: 30),
+              if (_userService.currentUser?.userType == 'Finder') ...[
+                const SizedBox(height: 24),
+                _buildShelterImagePicker(),
+              ],
+              const SizedBox(height: 24),
               _buildSection(
                 title: 'Personal Information',
                 icon: Icons.person,
@@ -170,7 +226,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildTextField(
                     controller: _emailController,
                     label: 'Email',
@@ -187,7 +243,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildTextField(
                     controller: _phoneController,
                     label: 'Phone Number',
@@ -205,23 +261,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _buildSection(
                 title: 'Address',
-                icon: Icons.home,
+                icon: Icons.location_on,
                 children: [
                   _buildTextField(
                     controller: _addressLine1Controller,
                     label: 'Address Line 1',
                     icon: Icons.location_on_outlined,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildTextField(
                     controller: _addressLine2Controller,
                     label: 'Address Line 2',
                     icon: Icons.location_on_outlined,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -241,17 +297,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildTextField(
                     controller: _pincodeController,
                     label: 'Pincode',
-                    icon: Icons.pin_outlined,
+                    icon: Icons.pin,
                     keyboardType: TextInputType.number,
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              if (_userService.currentUser?.userType == 'Donor')
+              if (_userService.currentUser?.userType == 'Donor') ...[
+                const SizedBox(height: 16),
                 _buildSection(
                   title: 'Preferences',
                   icon: Icons.settings,
@@ -265,7 +321,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         setState(() => _preferredDonationType = value);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     _buildDropdownField(
                       label: 'Delivery Method',
                       icon: Icons.delivery_dining,
@@ -275,7 +331,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         setState(() => _deliveryMethod = value);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     _buildSwitchTile(
                       title: 'Notifications',
                       subtitle: 'Receive notifications about donations',
@@ -287,38 +343,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ],
                 ),
-              const SizedBox(height: 30),
+              ],
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kPrimaryColor,
+                    backgroundColor: _kPrimaryGreen,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 2,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                             color: Colors.white,
                           ),
                         )
                       : Text(
                           'Save Changes',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
+                            letterSpacing: -0.2,
                           ),
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -327,76 +386,120 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   PreferredSizeWidget _buildTopBar() {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [_kPrimaryGreen, _kPrimaryGreen.withOpacity(0.85)],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 3,
-              offset: Offset(0, 3.5),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          toolbarHeight: customHeight,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            "Edit Profile",
-            style: GoogleFonts.imFellGreatPrimerSc(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    'Edit Profile',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 20),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UserProfilePage()),
+                  ),
+                ),
+              ],
             ),
           ),
-          centerTitle: true,
         ),
       ),
     );
   }
 
   Widget _buildProfileImagePicker() {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundColor: _kPrimaryColor,
-            backgroundImage: _profileImagePath != null
-                ? FileImage(File(_profileImagePath!))
-                : null,
-            child: _profileImagePath == null
-                ? const Icon(Icons.person, size: 60, color: Colors.white)
-                : null,
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: _kPrimaryColor, width: 2),
-              ),
-              child: const Icon(
-                Icons.camera_alt,
-                size: 20,
-                color: _kPrimaryColor,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return _buildImagePickerTile(
+      title: 'Profile Picture',
+      path: _profileImagePath,
+      onTap: _pickProfileImage,
+    );
+  }
+
+  Widget _buildShelterImagePicker() {
+    return _buildImagePickerTile(
+      title: 'Shelter / House Image',
+      path: _shelterImagePath,
+      onTap: _pickShelterImage,
+      isBanner: true,
+    );
+  }
+
+  Widget _buildImagePickerTile({
+    required String title,
+    required String? path,
+    required VoidCallback onTap,
+    bool isBanner = false,
+  }) {
+    return Column(
+      children: [
+        Text(title, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: _kTextDark)),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: onTap,
+          child: path != null
+              ? Container(
+                  height: isBanner ? 150 : 120,
+                  width: isBanner ? double.infinity : 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(isBanner ? 16 : 60),
+                    image: DecorationImage(
+                      image: path.startsWith('http') ? NetworkImage(path) : FileImage(File(path)) as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              : Container(
+                  height: isBanner ? 150 : 120,
+                  width: isBanner ? double.infinity : 120,
+                  decoration: BoxDecoration(
+                    color: _kPrimaryGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(isBanner ? 16 : 60),
+                    border: Border.all(color: _kPrimaryGreen, width: 2),
+                  ),
+                  child: Icon(isBanner ? Icons.home_work : Icons.person_add, size: 40, color: _kPrimaryGreen),
+                ),
+        ),
+      ],
     );
   }
 
@@ -407,14 +510,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _kCardWhite,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _kBorderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -427,23 +531,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _kPrimaryColor.withOpacity(0.1),
+                  color: _kPrimaryGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 20, color: _kPrimaryColor),
+                child: Icon(icon, size: 18, color: _kPrimaryGreen),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Text(
                 title,
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _kTextDark,
+                  letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           ...children,
         ],
       ),
@@ -461,33 +566,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
-      style: GoogleFonts.playfairDisplay(fontSize: 15),
+      style: GoogleFonts.inter(fontSize: 13, color: _kTextDark),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.playfairDisplay(
-          fontSize: 14,
-          color: Colors.grey[600],
+        labelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          color: _kTextLight,
+          fontWeight: FontWeight.w600,
         ),
-        prefixIcon: Icon(icon, size: 20, color: _kPrimaryColor),
+        prefixIcon: Icon(icon, size: 18, color: _kTextLight),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(color: _kBorderLight),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(color: _kBorderLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _kPrimaryColor, width: 2),
+          borderSide: const BorderSide(color: _kPrimaryGreen, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       ),
     );
   }
@@ -501,36 +608,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
+      style: GoogleFonts.inter(fontSize: 13, color: _kTextDark),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.playfairDisplay(
-          fontSize: 14,
-          color: Colors.grey[600],
+        labelStyle: GoogleFonts.inter(
+          fontSize: 11,
+          color: _kTextLight,
+          fontWeight: FontWeight.w600,
         ),
-        prefixIcon: Icon(icon, size: 20, color: _kPrimaryColor),
+        prefixIcon: Icon(icon, size: 18, color: _kTextLight),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(color: _kBorderLight),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: const BorderSide(color: _kBorderLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _kPrimaryColor, width: 2),
+          borderSide: const BorderSide(color: _kPrimaryGreen, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       ),
       items: items.map((String item) {
         return DropdownMenuItem<String>(
           value: item,
-          child: Text(
-            item,
-            style: GoogleFonts.playfairDisplay(fontSize: 15),
-          ),
+          child: Text(item, style: GoogleFonts.inter(fontSize: 13)),
         );
       }).toList(),
       onChanged: onChanged,
@@ -545,33 +652,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required void Function(bool) onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: _kBorderLight),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: _kPrimaryColor),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _kPrimaryGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: _kPrimaryGreen),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 15,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: _kTextDark,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: _kTextLight,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -580,7 +696,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: _kPrimaryColor,
+            activeColor: _kPrimaryGreen,
           ),
         ],
       ),

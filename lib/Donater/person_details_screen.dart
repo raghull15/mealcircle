@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mealcircle/widgets/user_profile_page.dart';
+import 'package:mealcircle/services/user_profile_page.dart';
+import 'package:mealcircle/shared/design_system.dart';
 
-const Color _kPrimaryColor = Color(0xFF2AC962);
+// Traditional color scheme replacements handled by DesignSystem
 
 class PersonDetailScreen extends StatelessWidget {
   final String name;
@@ -20,64 +21,163 @@ class PersonDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8E5),
+      backgroundColor: AppColors.backgroundCream,
       appBar: _buildTopBar(context),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Profile Avatar
             Center(
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: _kPrimaryColor,
-                child: const Icon(Icons.person, size: 50, color: Colors.white),
+              child: TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 400),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.8)],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGreen.withOpacity(0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: AppColors.cardWhite,
+                    child: Icon(Icons.person_rounded,
+                        size: 70, color: AppColors.primaryGreen),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
+
+            // Personal Information Card
+            _buildSectionTitle('Personal Information'),
+            const SizedBox(height: 12),
             _buildInfoCard(
               children: [
-                _buildInfoRow(Icons.person, 'Name', name),
-                const Divider(height: 30),
-                _buildInfoRow(Icons.cake, 'Age', '$age years'),
-                const Divider(height: 30),
-                _buildInfoRow(Icons.work, 'Service', service),
+                _buildDetailRow(Icons.person_rounded, 'Name', name),
+                const Divider(height: 20, color: AppColors.borderLight),
+                _buildDetailRow(
+                  Icons.cake_rounded,
+                  'Age',
+                  '$age years old',
+                ),
+                const Divider(height: 20, color: AppColors.borderLight),
+                _buildDetailRow(Icons.work_outline_rounded, 'Service', service),
               ],
             ),
             const SizedBox(height: 20),
-            Text(
-              'Details',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 10),
+
+            // Details Section
+            _buildSectionTitle('About This Person'),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardWhite,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Text(
                 details,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  height: 1.5,
-                ),
+                style: AppTypography.bodyMedium(color: AppColors.textLight).copyWith(height: 1.8),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Impact Section
+            _buildSectionTitle('Your Help Matters'),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.accentOrange.withOpacity(0.1),
+                    AppColors.accentOrange.withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.accentOrange.withOpacity(0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentOrange.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.volunteer_activism_rounded,
+                            color: AppColors.accentOrange, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Direct Support',
+                          style: AppTypography.headingSmall(color: AppColors.textDark),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your donation will directly help $name. Every contribution makes a meaningful difference in their daily life and well-being.',
+                    style: AppTypography.bodyMedium(color: AppColors.textLight).copyWith(height: 1.6),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _buildImpactBadge('❤️', 'Care'),
+                      const SizedBox(width: 10),
+                      _buildImpactBadge('🤝', 'Support'),
+                      const SizedBox(width: 10),
+                      _buildImpactBadge('✨', 'Hope'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -85,68 +185,89 @@ class PersonDetailScreen extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildTopBar(BuildContext context) {
-    const double customHeight = 74.0;
-
     return PreferredSize(
-      preferredSize: const Size.fromHeight(customHeight),
+      preferredSize: const Size.fromHeight(100),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _kPrimaryColor,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.85)],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
-              blurRadius: 4,
-              offset: Offset(0, .2),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          toolbarHeight: customHeight,
-          automaticallyImplyLeading: false,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            "Contact Person",
-            style: GoogleFonts.imFellGreatPrimerSc(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person_outline,
-                  color: Colors.white, size: 26),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const UserProfilePage(),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Text(
+                    'Contact Person',
+                    style: AppTypography.headingMedium(color: Colors.white),
                   ),
-                );
-              },
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 20),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const UserProfilePage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textDark,
+        letterSpacing: -0.3,
       ),
     );
   }
 
   Widget _buildInfoCard({required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -158,42 +279,64 @@ class PersonDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _kPrimaryColor.withOpacity(0.1),
+            color: AppColors.primaryGreen.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 24, color: _kPrimaryColor),
+          child: Icon(icon, size: 20, color: AppColors.primaryGreen),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textLight,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 16,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textDark,
                 ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImpactBadge(String emoji, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.accentOrange.withOpacity(0.2)),
+      ),
+      child: Text(
+        '$emoji $label',
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textDark,
+        ),
+      ),
     );
   }
 }
